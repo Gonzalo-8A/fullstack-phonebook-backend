@@ -96,7 +96,7 @@ app.post('/api/persons', (request, response) => {
   response.json(person)
 })
 
-app.get('*', (req, res) => {
+app.get(/^\/(?!api).*/, (req, res) => {
   res.sendFile(path.resolve(__dirname, 'dist', 'index.html'))
 })
 
