@@ -43,10 +43,7 @@ app.get('/api/persons/:id', (request, response) => {
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  Person.find({}).then((persons) => {
-    const id = request.params.id
-    persons = persons.filter((p) => p.id !== id)
-
+  Person.findByIdAndDelete(request.params.id).then(() => {
     response.status(204).end()
   })
 })
@@ -71,7 +68,6 @@ app.post('/api/persons', async (request, response) => {
     const savedPerson = await person.save()
 
     response.json(savedPerson)
-
   } catch (error) {
     console.log(error)
   }
