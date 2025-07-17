@@ -15,7 +15,7 @@ const App = () => {
   const [filter, setFilter] = useState('')
   const [message, setMessage] = useState({
     text: null,
-    type: ''
+    type: '',
   })
 
   useEffect(() => {
@@ -38,7 +38,7 @@ const App = () => {
 
     const person = persons.find((p) => p.name === newName)
 
-    if(person) {
+    if (person) {
       if (
         window.confirm(
           `${person.name} is already added to the phonebook, replace the old number with a new one?`
@@ -50,38 +50,46 @@ const App = () => {
             setPersons((prev) => prev.map((p) => (p.id === updatedPerson.id ? updatedPerson : p)))
             setNewName('')
             setNewPhone('')
-            setMessage({text: `${updatedPerson.name} was successfully updated`, type: 'add'})
+            setMessage({ text: `${updatedPerson.name} was successfully updated`, type: 'add' })
             setTimeout(() => {
-              setMessage({text: null, type: ''})
+              setMessage({ text: null, type: '' })
             }, 5000)
           })
           .catch((error) => {
             console.error('Error updating person:', error)
-            setMessage({text: `Failed to update ${person.name}. They may have been removed from the server.`, type: 'error'})
+            const errorMessage =
+              error.response?.data?.error ||
+              `Failed to update ${person.name}. They may have been removed from the server.`
+            setMessage({
+              text: errorMessage,
+              type: 'error',
+            })
             setTimeout(() => {
-              setMessage({text: null, type: ''})
+              setMessage({ text: null, type: '' })
             }, 5000)
           })
       } else return
     } else {
-          personsService
-      .create(newPerson)
-      .then((createdPerson) => {
-        setPersons((prev) => prev.concat(createdPerson))
-        setNewName('')
-        setNewPhone('')
-        setMessage({text: `${createdPerson.name} was successfully added`, type: 'add'})
-        setTimeout(() => {
-          setMessage({text: null, type: ''})
-        }, 5000)
-      })
-      .catch((error) => {
-        console.error('Error adding person:', error)
-        setMessage({text: 'Failed to add new person, please try again later.', type: 'error'})
-        setTimeout(() => {
-          setMessage({text: null, type: ''})
-        }, 5000)
-      })
+      personsService
+        .create(newPerson)
+        .then((createdPerson) => {
+          setPersons((prev) => prev.concat(createdPerson))
+          setNewName('')
+          setNewPhone('')
+          setMessage({ text: `${createdPerson.name} was successfully added`, type: 'add' })
+          setTimeout(() => {
+            setMessage({ text: null, type: '' })
+          }, 5000)
+        })
+        .catch((error) => {
+          console.error('Error adding person:', error)
+          const errorMessage =
+            error.response?.data?.error || 'Failed to add new person, please try again later.'
+          setMessage({ text: errorMessage, type: 'error' })
+          setTimeout(() => {
+            setMessage({ text: null, type: '' })
+          }, 5000)
+        })
     }
   }
 
@@ -129,7 +137,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
-      <Notification message={message}/>
+      <Notification message={message} />
       <Filter value={filter} onChange={handleFilterChange} />
       <h2>Add a new Contact</h2>
       <PersonForm
