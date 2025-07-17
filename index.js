@@ -1,77 +1,57 @@
 const express = require('express')
 const path = require('path')
 const app = express()
-
-let persons = [
-  {
-    id: '1',
-    name: 'Arto Hellas',
-    number: '040-123456',
-  },
-  {
-    id: '2',
-    name: 'Ada Lovelace',
-    number: '39-44-5323523',
-  },
-  {
-    id: '3',
-    name: 'Dan Abramov',
-    number: '12-43-234345',
-  },
-  {
-    id: '4',
-    name: 'Mary Poppendieck',
-    number: '39-23-6423122',
-  },
-]
+require('dotenv').config()
+const cors = require('cors')
+const morgan = require('morgan')
+const Person = require('./models/person.js')
 
 app.use(express.json())
-
-const cors = require('cors')
 app.use(cors())
-
 app.use(express.static('dist'))
 
-const morgan = require('morgan')
 morgan.token('body', (req) => JSON.stringify(req.body))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Person.find({}).then((persons) => {
+    response.json(persons)
+  })
 })
 
 app.get('/api/info', (request, response) => {
-  response.send(`
+  Person.find({}).then((persons) => {
+    response.send(`
     <h1>Agenda de contactos</h1>
     <p>La API contiene información sobre ${persons.length} personas</p>
     <p>${new Date()}</p>
   `)
+  })
 })
 
 app.get('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  const person = persons.find((p) => p.id === id)
+  Person.find({}).then((persons) => {
+    const id = request.params.id
+    const person = persons.find((p) => p.id === id)
 
-  if (person) {
-    response.json(person)
-  } else {
-    response.status(404).end()
-  }
+    if (person) {
+      response.json(person)
+    } else {
+      response.status(404).end()
+    }
+  })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  persons = persons.filter((p) => p.id !== id)
+  Person.find({}).then((persons) => {
+    const id = request.params.id
+    persons = persons.filter((p) => p.id !== id)
 
-  response.status(204).end()
+    response.status(204).end()
+  })
 })
 
-const generateId = () => {
-  const maxId = persons.length > 0 ? Math.max(...persons.map((n) => Number(n.id))) : 0
-  return String(maxId + 1)
-}
-
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', async (request, response) => {
   const { name, number } = request.body
 
   if (!name) {
@@ -80,20 +60,21 @@ app.post('/api/persons', (request, response) => {
   if (!number) {
     return response.status(400).json({ error: 'number missing' })
   }
-  const personAlreadyExists = persons.find((p) => p.name === name)
-  if (personAlreadyExists) {
-    return response.status(400).json({ error: 'Name already exists. Name must me unique' })
+  try {
+    const existingPerson = await Person.findOne({ name })
+    if (existingPerson) {
+      return response.status(400).json({ error: 'Name already exists. Name must be unique' })
+    }
+
+    const person = new Person({ name, number })
+
+    const savedPerson = await person.save()
+
+    response.json(savedPerson)
+
+  } catch (error) {
+    console.log(error)
   }
-
-  const person = {
-    name,
-    number,
-    id: generateId(),
-  }
-
-  persons = persons.concat(person)
-
-  response.json(person)
 })
 
 app.get(/^\/(?!api).*/, (req, res) => {
